@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/vim_recovery/swapfile'
+
+ARGV << '.' if ARGV.empty?
+
+ARGV.each do |path|
+  Dir.glob("#{File.expand_path path}/*.s[uvw][a-z]", File::FNM_DOTMATCH) do |filename|
+    next unless File.file? filename
+
+    VimRecovery::Swapfile.open filename do |swapfile|
+      next unless swapfile.valid_block0?
+
+      # print status
+      puts '[%s%s] %s (%s)' % [
+        swapfile.modified?      ? 'M' : ' ',
+        swapfile.still_running? ? 'R' : ' ',
+        filename,
+        swapfile.original_filename
+      ]
+
+    end
+  end
+end
+
+exit
