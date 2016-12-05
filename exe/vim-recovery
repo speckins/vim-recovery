@@ -1,0 +1,68 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'vim_recovery/command'
+require 'vim_recovery/version'
+
+command = nil
+options = {}
+
+parser = OptionParser.new do |parser|
+  parser.banner = "Usage:  vim-recovery [options] [paths...]"
+
+  # --------------------------------------------------------------------------
+  parser.separator 'Commands:'
+  # --------------------------------------------------------------------------
+
+  parser.on '--list', '-l', 'Find and list Vim swapfiles' do
+    command = VimRecovery::Command::List
+  end
+
+  parser.on '--clean', 'Delete unmodified swapfiles if process is not still running' do
+    command = VimRecovery::Command::Clean
+  end
+
+  parser.on_tail '--version', 'Show version' do
+    puts VimRecovery::Version
+    exit
+  end
+
+  parser.on_tail '--help', '-h', 'Display this help' do
+    puts parser.help
+    exit
+  end
+
+  # --------------------------------------------------------------------------
+  parser.separator 'Options:'
+  # --------------------------------------------------------------------------
+
+  parser.on '--recursive', '-r', 'Also search subdirectories' do
+    options[:recursive] = true
+  end
+
+  parser.on '--verbose', '-v', 'Be more verbose' do
+    options[:verbose] = true
+  end
+
+  parser.separator ''
+end
+
+paths = parser.parse ARGV
+
+if command.nil?
+  puts "Required:  --list or --clean"
+  puts parser.help
+  exit 1
+end
+
+paths << '.' if paths.empty?
+
+paths.reject! do |path|
+  unless File.directory? path
+    STDERR.puts "#{path} is neither a directory nor a symlink to a directory"
+  end
+end
+
+exit 1 if paths.empty?
+
+command.new(paths, options).run
